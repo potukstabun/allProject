@@ -710,6 +710,14 @@
 </div>
 
 <script>
+// ——— WHEEL SEGMENTS ———
+const SEGMENTS = [
+  { label: '1 ชิ้น',  pieces: 1, prob: 0.40, deg: 144, color: '#f97316', emoji: '🫓' },
+  { label: '2 ชิ้น',  pieces: 2, prob: 0.30, deg: 108, color: '#3b82f6', emoji: '🫓🫓' },
+  { label: '3 ชิ้น',  pieces: 3, prob: 0.20, deg: 72,  color: '#a855f7', emoji: '🫓🫓🫓' },
+  { label: '4 ชิ้น',  pieces: 4, prob: 0.10, deg: 36,  color: '#22c55e', emoji: '🫓×4' },
+];
+
 // ——— HELPER ———
 function setPanelActive(id, active, color = null) {
   const el = document.getElementById(id);
