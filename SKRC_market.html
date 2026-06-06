@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SKRC — โรตีสายไหม Spin Wheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060810;
+    --surface: #0e1020;
+    --surface2: #161828;
+    --border: rgba(100,180,255,0.08);
+    --blue: #3b82f6;
+    --blue-bright: #60a5fa;
+    --cyan: #22d3ee;
+    --gold: #f59e0b;
+    --gold-light: #fcd34d;
+    --red: #ef4444;
+    --green: #22c55e;
+    --text: #e2e8f0;
+    --text-dim: rgba(226,232,240,0.4);
+    --c1: #f97316;
+    --c2: #3b82f6;
+    --c3: #a855f7;
+    --c4: #22c55e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 20% 90%, rgba(59,130,246,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 80% 10%, rgba(168,85,247,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(34,211,238,0.03) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  header {
+    position: relative; z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14,16,32,0.8);
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+  }
+
+  .logo-area { display: flex; align-items: center; gap: 12px; }
+  .skrc-logo { width: 52px; height: 52px; flex-shrink: 0; }
+  .club-info { display: flex; flex-direction: column; }
+
+  .club-name {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 1.15rem;
+    letter-spacing: 0.12em;
+    background: linear-gradient(90deg, var(--cyan) 0%, var(--blue-bright) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 100%;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes shimmer { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 0%; } }
+
+  .club-sub { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); font-weight: 300; }
+
+  .header-center { text-align: center; }
+  .roti-title { font-family: 'Sarabun', sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--gold-light); text-shadow: 0 0 20px rgba(252,211,77,0.4); }
+  .roti-sub { font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-dim); }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  .rate-chip {
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px 8px; min-width: 44px;
+    transition: all 0.3s;
+  }
+  .rate-chip-num { font-family: 'Orbitron', monospace; font-size: 0.7rem; font-weight: 700; }
+  .rate-chip-label { font-size: 0.52rem; color: var(--text-dim); white-space: nowrap; }
+
+  .app {
+    position: relative; z-index: 10;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    gap: 12px;
+    padding: 12px 16px;
+    min-height: 0;
+  }
+
+  .panel {
+    background: rgba(14,16,32,0.7);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .panel-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .panel-label::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 1px;
+    background: var(--cyan);
+    display: inline-block;
+    box-shadow: 0 0 6px var(--cyan);
+  }
+
+  .terminal {
+    background: #04060c;
+    border: 1px solid rgba(34,211,238,0.15);
+    border-radius: 10px;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .terminal-bar {
+    background: var(--surface2);
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-bottom: 1px solid rgba(34,211,238,0.08);
+    flex-shrink: 0;
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; } .dot-y { background: #ffbd2e; } .dot-g { background: #28ca41; }
+  .terminal-name { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--text-dim); margin-left: 4px; }
+
+  .terminal-body {
+    flex: 1;
+    padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+    line-height: 1.75;
+    overflow-y: auto;
+    min-height: 80px;
+    max-height: 130px;
+  }
+  .terminal-body::-webkit-scrollbar { width: 2px; }
+  .terminal-body::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); }
+
+  .term-line { display: flex; gap: 5px; }
+  .term-prompt { color: var(--cyan); opacity: 0.7; }
+  .t-ok { color: var(--green); }
+  .t-info { color: var(--cyan); }
+  .t-warn { color: var(--gold); }
+  .t-err { color: var(--red); }
+  .t-dim { color: var(--text-dim); }
+  .cursor { display: inline-block; width: 6px; height: 10px; background: var(--cyan); animation: blink 1s steps(1) infinite; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .status-box {
+    background: rgba(4,6,12,0.6);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    min-height: 50px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    margin-top: 3px;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .status-dot.error { background: var(--red); box-shadow: 0 0 6px var(--red); animation: none; }
+  .status-text { font-size: 0.58rem; }
+  .status-text.ok { color: var(--green); }
+  .status-text.err { color: var(--red); }
+
+  .music-box {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(168,85,247,0.06));
+    border: 1px solid rgba(59,130,246,0.15);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .music-top { display: flex; align-items: center; justify-content: space-between; }
+  .music-track { font-size: 0.7rem; font-weight: 700; color: var(--text); }
+  .music-genre { font-size: 0.55rem; color: var(--text-dim); letter-spacing: 0.1em; }
+
+  .waveform { display: flex; align-items: center; gap: 2px; height: 18px; }
+  .w-bar { width: 3px; background: rgba(59,130,246,0.3); border-radius: 2px; transition: height 0.08s; }
+  .w-bar.active { background: var(--blue-bright); }
+
+  .music-controls { display: flex; align-items: center; gap: 6px; }
+  .m-btn {
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.65rem; color: var(--blue-bright);
+    transition: all 0.2s;
+  }
+  .m-btn:hover { background: rgba(59,130,246,0.25); }
+  .m-btn.play { width: 32px; height: 32px; background: var(--blue); color: #fff; border-color: var(--blue); font-size: 0.85rem; }
+  .m-btn.play:hover { background: var(--blue-bright); }
+  .m-state { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--text-dim); margin-left: auto; }
+
+  /* ——— SETTINGS BOX ——— */
+  .settings-box {
+    background: rgba(245,158,11,0.04);
+    border: 1px solid rgba(245,158,11,0.12);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+
+  /* Lock screen */
+  .lock-screen { display: flex; flex-direction: column; gap: 6px; }
+  .pw-row {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px;
+  }
+  .pw-input {
+    background: none; border: none; outline: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+    color: var(--gold); flex: 1; min-width: 0; letter-spacing: 0.1em;
+  }
+  .unlock-btn {
+    background: rgba(245,158,11,0.15);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 5px;
+    padding: 3px 9px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.52rem; font-weight: 700;
+    color: var(--gold); cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .unlock-btn:hover { background: rgba(245,158,11,0.28); }
+  .pw-err { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--red); text-align: center; animation: shake 0.3s ease; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+
+  /* Unlock screen */
+  .unlock-screen { display: flex; flex-direction: column; gap: 7px; }
+
+  .unlock-header {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .unlock-title { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--green); }
+  .lock-btn {
+    background: none; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px; padding: 2px 6px;
+    font-size: 0.5rem; color: var(--text-dim); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lock-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .seg-row {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .seg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .seg-name { font-size: 0.6rem; color: var(--text-dim); flex: 1; }
+  .seg-num-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--gold);
+    width: 38px; text-align: right; outline: none;
+    transition: border-color 0.2s;
+  }
+  .seg-num-input:focus { border-color: rgba(245,158,11,0.4); }
+  .seg-pct { font-size: 0.6rem; color: var(--text-dim); }
+
+  .settings-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px;
+  }
+  .total-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
+  }
+  .total-ok { color: var(--green); }
+  .total-bad { color: var(--red); }
+
+  .apply-btn {
+    background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.1));
+    border: 1px solid rgba(34,197,94,0.35);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.52rem; font-weight: 700;
+    color: var(--green); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .apply-btn:hover:not(:disabled) { background: rgba(34,197,94,0.3); }
+  .apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ——— CENTER ——— */
+  .center-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+
+  .wheel-wrap { position: relative; width: 300px; height: 300px; }
+
+  .wheel-glow {
+    position: absolute; inset: -12px; border-radius: 50%;
+    background: conic-gradient(
+      var(--c1) 0deg 144deg,
+      var(--c2) 144deg 252deg,
+      var(--c3) 252deg 324deg,
+      var(--c4) 324deg 360deg
+    );
+    filter: blur(8px); opacity: 0.25; z-index: 0; transition: opacity 0.3s;
+  }
+  .spinning .wheel-glow { opacity: 0.55; animation: rotate-glow 0.4s linear infinite; }
+  @keyframes rotate-glow { to { transform: rotate(360deg); } }
+
+  .wheel-border { position: absolute; inset: -5px; border-radius: 50%; border: 2px solid rgba(100,180,255,0.15); background: transparent; z-index: 1; }
+
+  canvas#wheel { position: relative; z-index: 2; border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
+  canvas#wheel:hover { transform: scale(1.01); }
+
+  .pointer { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); z-index: 10; filter: drop-shadow(0 3px 10px rgba(245,158,11,0.7)); }
+
+  .hub {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px; height: 48px;
+    background: radial-gradient(circle, #1a1c2e 50%, #0d0f1c);
+    border-radius: 50%;
+    border: 2px solid rgba(34,211,238,0.5);
+    z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 16px rgba(34,211,238,0.3), inset 0 0 8px rgba(0,0,0,0.5);
+    transition: all 0.2s;
+    font-family: 'Orbitron', monospace; font-size: 0.6rem; font-weight: 700; color: var(--cyan); letter-spacing: 0.05em;
+  }
+  .hub:hover { box-shadow: 0 0 24px rgba(34,211,238,0.6), inset 0 0 8px rgba(0,0,0,0.5); transform: translate(-50%, -50%) scale(1.06); }
+
+  .spin-btn {
+    position: relative;
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    color: #fff; border: none; border-radius: 50px;
+    padding: 11px 48px;
+    font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.15em; cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.45), 0 0 0 1px rgba(96,165,250,0.2);
+    text-transform: uppercase;
+  }
+  .spin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(59,130,246,0.6), 0 0 0 1px rgba(96,165,250,0.3); }
+  .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .spin-btn::after { content: ''; position: absolute; inset: 1px; border-radius: 50px; background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent); pointer-events: none; }
+
+  .result-area { min-height: 42px; display: flex; align-items: center; justify-content: center; }
+  .result-badge {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 50px;
+    padding: 8px 28px; font-size: 0.78rem; letter-spacing: 0.05em; color: var(--text-dim);
+    opacity: 0; transition: all 0.4s;
+    font-family: 'Sarabun', sans-serif; font-weight: 700;
+  }
+  .result-badge.show { opacity: 1; }
+  .result-badge.win { border-color: rgba(252,211,77,0.4); background: rgba(245,158,11,0.08); color: var(--gold-light); box-shadow: 0 0 20px rgba(245,158,11,0.2); }
+
+  /* ——— RIGHT ——— */
+  .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+  .history-list::-webkit-scrollbar { width: 2px; }
+  .history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); }
+
+  .h-item { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 9px; animation: slide-in 0.3s ease-out; }
+  @keyframes slide-in { from { opacity:0; transform: translateX(8px); } to { opacity:1; transform: none; } }
+
+  .h-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .h-label { font-size: 0.68rem; color: var(--text); flex: 1; font-weight: 600; }
+  .h-sub { font-size: 0.58rem; color: var(--text-dim); }
+  .h-num { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--text-dim); }
+  .h-empty { color: var(--text-dim); font-size: 0.62rem; text-align: center; padding: 20px 0; opacity: 0.4; letter-spacing: 0.1em; }
+
+  .stats-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; flex-shrink: 0; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-item { text-align: center; }
+  .stat-num { font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; }
+  .stat-lbl { font-size: 0.52rem; color: var(--text-dim); letter-spacing: 0.08em; }
+
+  #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
+  .scanline {
+    position: fixed; inset: 0; z-index: 1;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+<canvas id="confetti-canvas"></canvas>
+
+<header>
+  <div class="logo-area">
+    <svg class="skrc-logo" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gCyan" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#22d3ee"/>
+          <stop offset="100%" stop-color="#3b82f6"/>
+        </linearGradient>
+        <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fcd34d"/>
+          <stop offset="100%" stop-color="#f59e0b"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <polygon points="26,2 47,13 47,39 26,50 5,39 5,13" fill="none" stroke="url(#gCyan)" stroke-width="1.5" opacity="0.7"/>
+      <polygon points="26,6 43,15.5 43,36.5 26,46 9,36.5 9,15.5" fill="rgba(14,16,32,0.95)" stroke="rgba(34,211,238,0.2)" stroke-width="0.5"/>
+      <g filter="url(#glow)" opacity="0.9">
+        <circle cx="26" cy="26" r="11" fill="none" stroke="url(#gCyan)" stroke-width="1.5"/>
+        <rect x="24.5" y="13" width="3" height="3.5" rx="0.5" fill="url(#gCyan)"/>
+        <rect x="24.5" y="35.5" width="3" height="3.5" rx="0.5" fill="url(#gCyan)"/>
+        <rect x="13" y="24.5" width="3.5" height="3" rx="0.5" fill="url(#gCyan)"/>
+        <rect x="35.5" y="24.5" width="3.5" height="3" rx="0.5" fill="url(#gCyan)"/>
+        <rect x="17.2" y="15.8" width="3" height="3" rx="0.5" fill="url(#gCyan)" transform="rotate(45 18.7 17.3)"/>
+        <rect x="32" y="15.8" width="3" height="3" rx="0.5" fill="url(#gCyan)" transform="rotate(45 33.5 17.3)"/>
+        <rect x="17.2" y="32" width="3" height="3" rx="0.5" fill="url(#gCyan)" transform="rotate(45 18.7 33.5)"/>
+        <rect x="32" y="32" width="3" height="3" rx="0.5" fill="url(#gCyan)" transform="rotate(45 33.5 33.5)"/>
+        <circle cx="26" cy="26" r="6" fill="rgba(14,16,32,0.9)" stroke="url(#gCyan)" stroke-width="1"/>
+        <polygon points="26,22 29.5,26 26,30 22.5,26" fill="url(#gGold)" opacity="0.9"/>
+        <circle cx="14" cy="20" r="1.2" fill="url(#gCyan)" opacity="0.6"/>
+        <circle cx="14" cy="32" r="1.2" fill="url(#gCyan)" opacity="0.6"/>
+        <circle cx="38" cy="20" r="1.2" fill="url(#gCyan)" opacity="0.6"/>
+        <circle cx="38" cy="32" r="1.2" fill="url(#gCyan)" opacity="0.6"/>
+        <line x1="14" y1="20" x2="14" y2="32" stroke="url(#gCyan)" stroke-width="0.5" opacity="0.4"/>
+        <line x1="38" y1="20" x2="38" y2="32" stroke="url(#gCyan)" stroke-width="0.5" opacity="0.4"/>
+      </g>
+      <text x="26" y="26.5" text-anchor="middle" dominant-baseline="middle"
+        font-family="Orbitron,monospace" font-weight="900" font-size="5.5"
+        fill="url(#gGold)" letter-spacing="0.5">SK</text>
+    </svg>
+    <div class="club-info">
+      <div class="club-name">SKRC</div>
+      <div class="club-sub">SK Robotics Club</div>
+    </div>
+  </div>
+
+  <div class="header-center">
+    <div class="roti-title">🫓 โรตีสายไหม</div>
+    <div class="roti-sub">Fortune Spin Wheel</div>
+  </div>
+
+  <div class="header-right" id="header-chips">
+    <div class="rate-chip">
+      <span class="rate-chip-num" id="chip0" style="color:var(--c1)">40%</span>
+      <span class="rate-chip-label">1 ชิ้น</span>
+    </div>
+    <div class="rate-chip">
+      <span class="rate-chip-num" id="chip1" style="color:var(--c2)">30%</span>
+      <span class="rate-chip-label">2 ชิ้น</span>
+    </div>
+    <div class="rate-chip">
+      <span class="rate-chip-num" id="chip2" style="color:var(--c3)">20%</span>
+      <span class="rate-chip-label">3 ชิ้น</span>
+    </div>
+    <div class="rate-chip">
+      <span class="rate-chip-num" id="chip3" style="color:var(--c4)">10%</span>
+      <span class="rate-chip-label">4 ชิ้น</span>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT -->
+  <div class="left-panel" style="display:flex;flex-direction:column;gap:10px;">
+
+    <div class="panel" style="flex:1">
+      <div class="panel-label">Terminal Log</div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+          <span class="terminal-name">roti_wheel.js</span>
+        </div>
+        <div class="terminal-body" id="terminal-body">
+          <div class="term-line"><span class="term-prompt">$</span><span class="t-info">node roti_wheel.js</span></div>
+          <div class="term-line"><span class="t-dim">→ SKRC Wheel Engine v1.0</span></div>
+          <div class="term-line"><span class="t-dim">→ Segments loaded: 4</span></div>
+          <div class="term-line"><span class="t-ok">✓ System ready</span></div>
+          <div class="term-line"><span class="term-prompt">$</span><span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">System Status</div>
+      <div class="status-box">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-text ok" id="status-text">ONLINE — ระบบพร้อม</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Music</div>
+      <div class="music-box">
+        <div class="music-top">
+          <div>
+            <div class="music-track" id="music-track">SKRC Beat #01</div>
+            <div class="music-genre">Lo-fi / Ambient</div>
+          </div>
+        </div>
+        <div class="waveform" id="waveform"></div>
+        <div class="music-controls">
+          <button class="m-btn" onclick="prevTrack()">◁</button>
+          <button class="m-btn play" id="play-btn" onclick="toggleMusic()">▶</button>
+          <button class="m-btn" onclick="nextTrack()">▷</button>
+          <span class="m-state" id="m-state">paused</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel">
+      <div class="panel-label">Settings</div>
+      <div class="settings-box">
+
+        <!-- LOCKED state -->
+        <div class="lock-screen" id="lock-screen">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-dim);text-align:center;">
+            🔐 ใส่รหัสเพื่อแก้เรท
+          </div>
+          <div class="pw-row">
+            <span style="font-size:0.6rem;color:var(--text-dim)">🔑</span>
+            <input type="password" placeholder="password" class="pw-input" id="pw-input"
+              onkeydown="if(event.key==='Enter')tryUnlock()">
+            <button class="unlock-btn" onclick="tryUnlock()">UNLOCK</button>
+          </div>
+          <div id="pw-err" style="display:none" class="pw-err">❌ รหัสไม่ถูกต้อง</div>
+        </div>
+
+        <!-- UNLOCKED state -->
+        <div class="unlock-screen" id="unlock-screen" style="display:none">
+          <div class="unlock-header">
+            <span class="unlock-title">✓ UNLOCKED</span>
+            <button class="lock-btn" onclick="lockSettings()">🔒 Lock</button>
+          </div>
+
+          <div class="seg-row">
+            <div class="seg-dot" style="background:#f97316"></div>
+            <span class="seg-name">1 ชิ้น</span>
+            <input type="number" class="seg-num-input" id="inp0" value="40" min="0" max="100" oninput="updateTotal()">
+            <span class="seg-pct">%</span>
+          </div>
+          <div class="seg-row">
+            <div class="seg-dot" style="background:#3b82f6"></div>
+            <span class="seg-name">2 ชิ้น</span>
+            <input type="number" class="seg-num-input" id="inp1" value="30" min="0" max="100" oninput="updateTotal()">
+            <span class="seg-pct">%</span>
+          </div>
+          <div class="seg-row">
+            <div class="seg-dot" style="background:#a855f7"></div>
+            <span class="seg-name">3 ชิ้น</span>
+            <input type="number" class="seg-num-input" id="inp2" value="20" min="0" max="100" oninput="updateTotal()">
+            <span class="seg-pct">%</span>
+          </div>
+          <div class="seg-row">
+            <div class="seg-dot" style="background:#22c55e"></div>
+            <span class="seg-name">4 ชิ้น</span>
+            <input type="number" class="seg-num-input" id="inp3" value="10" min="0" max="100" oninput="updateTotal()">
+            <span class="seg-pct">%</span>
+          </div>
+
+          <div class="settings-footer">
+            <span class="total-indicator total-ok" id="total-lbl">รวม: 100%</span>
+            <button class="apply-btn" id="apply-btn" onclick="applyRates()">✓ APPLY</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER -->
+  <div class="center-panel">
+    <div class="wheel-wrap" id="wheel-wrap">
+      <div class="wheel-glow" id="wheel-glow"></div>
+      <div class="wheel-border"></div>
+      <div class="pointer">
+        <svg width="26" height="26" viewBox="0 0 26 26">
+          <polygon points="13,26 1,4 25,4" fill="#f59e0b" opacity="0.95"/>
+          <polygon points="13,22 4,6 22,6" fill="#fcd34d" opacity="0.35"/>
+        </svg>
+      </div>
+      <canvas id="wheel" width="300" height="300"></canvas>
+      <div class="hub" id="hub" onclick="spinWheel()">SPIN</div>
+    </div>
+
+    <div class="result-area">
+      <div class="result-badge" id="result-badge">กด SPIN เพื่อเริ่ม</div>
+    </div>
+
+    <button class="spin-btn" id="spin-btn" onclick="spinWheel()">▶ SPIN</button>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel panel">
+    <div class="panel-label">History — 10 Latest</div>
+    <div class="stats-box">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-num" id="stat-total" style="color:var(--cyan)">0</div>
+          <div class="stat-lbl">TOTAL SPINS</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="stat-best" style="color:var(--gold)">—</div>
+          <div class="stat-lbl">BEST WIN</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="stat-avg" style="color:var(--blue-bright)">—</div>
+          <div class="stat-lbl">AVG PIECE</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="stat-lucky" style="color:var(--green)">—</div>
+          <div class="stat-lbl">LUCKY RATE</div>
+        </div>
+      </div>
+    </div>
+    <div class="history-list" id="history-list">
+      <div class="h-empty" id="h-empty">ยังไม่มีการหมุน<br>กด SPIN เพื่อเริ่ม</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ——— PASSWORD ———
+const CORRECT_PASSWORD = 'aouchai14';
+
+function tryUnlock() {
+  const val = document.getElementById('pw-input').value;
+  const err = document.getElementById('pw-err');
+  if (val === CORRECT_PASSWORD) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('unlock-screen').style.display = 'flex';
+    err.style.display = 'none';
+    // Sync inputs with current probs
+    SEGMENTS.forEach((s, i) => {
+      document.getElementById('inp' + i).value = Math.round(s.prob * 100);
+    });
+    updateTotal();
+    addTermLog('', '✓ Settings unlocked', 't-ok');
+  } else {
+    err.style.display = 'block';
+    err.style.animation = 'none';
+    void err.offsetWidth;
+    err.style.animation = 'shake 0.3s ease';
+    document.getElementById('pw-input').value = '';
+    addTermLog('', '⚠ Wrong password attempt', 't-warn');
+  }
+}
+
+function lockSettings() {
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('unlock-screen').style.display = 'none';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-err').style.display = 'none';
+  addTermLog('', '🔒 Settings locked', 't-dim');
+}
+
+function updateTotal() {
+  const vals = [0,1,2,3].map(i => {
+    const v = parseInt(document.getElementById('inp'+i).value) || 0;
+    return v;
+  });
+  const total = vals.reduce((a,b) => a+b, 0);
+  const lbl = document.getElementById('total-lbl');
+  const btn = document.getElementById('apply-btn');
+  lbl.textContent = 'รวม: ' + total + '%';
+  if (total === 100) {
+    lbl.className = 'total-indicator total-ok';
+    btn.disabled = false;
+  } else {
+    lbl.className = 'total-indicator total-bad';
+    btn.disabled = true;
+  }
+}
+
+function applyRates() {
+  const vals = [0,1,2,3].map(i => (parseInt(document.getElementById('inp'+i).value) || 0) / 100);
+  const total = vals.reduce((a,b) => a+b, 0);
+  if (Math.abs(total - 1) > 0.001) return;
+
+  // Recalculate segment degrees
+  let cumDeg = 0;
+  SEGMENTS.forEach((s, i) => {
+    s.prob = vals[i];
+    s.deg = vals[i] * 360;
+    s.startDeg = cumDeg;
+    cumDeg += s.deg;
+  });
+
+  // Update header chips
+  SEGMENTS.forEach((s, i) => {
+    document.getElementById('chip' + i).textContent = Math.round(s.prob * 100) + '%';
+  });
+
+  // Update glow gradient
+  updateGlow();
+
+  // Redraw
+  drawWheel(currentAngle);
+
+  addTermLog('$', `setRates(${vals.map(v=>Math.round(v*100)).join(',')})`, 't-warn');
+  addTermLog('', '✓ Rates updated & applied', 't-ok');
+  setStatus(true, 'Rates updated!');
+  setTimeout(() => setStatus(null, 'ONLINE — ระบบพร้อม'), 2000);
+}
+
+function updateGlow() {
+  let deg = 0;
+  let gradient = SEGMENTS.map(s => {
+    const start = deg;
+    deg += s.deg;
+    return `${s.color} ${start}deg ${deg}deg`;
+  }).join(', ');
+  document.getElementById('wheel-glow').style.background = `conic-gradient(${gradient})`;
+}
+
+// ——— WHEEL SEGMENTS ———
+const SEGMENTS = [
+  { label: '1 ชิ้น',  pieces: 1, prob: 0.40, deg: 144, color: '#f97316', emoji: '🫓' },
+  { label: '2 ชิ้น',  pieces: 2, prob: 0.30, deg: 108, color: '#3b82f6', emoji: '🫓🫓' },
+  { label: '3 ชิ้น',  pieces: 3, prob: 0.20, deg: 72,  color: '#a855f7', emoji: '🫓🫓🫓' },
+  { label: '4 ชิ้น',  pieces: 4, prob: 0.10, deg: 36,  color: '#22c55e', emoji: '🫓×4' },
+];
+
+let cumDeg = 0;
+SEGMENTS.forEach(s => { s.startDeg = cumDeg; cumDeg += s.deg; });
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const CX = W / 2, CY = W / 2, R = W / 2 - 4;
+
+let currentAngle = 0;
+let isSpinning = false;
+let history = [];
+let spinCount = 0;
+let totalPieces = 0;
+
+function drawWheel(angle) {
+  ctx.clearRect(0, 0, W, W);
+  let start = angle;
+  SEGMENTS.forEach(seg => {
+    const sweep = (seg.deg / 360) * 2 * Math.PI;
+    const end = start + sweep;
+
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.arc(CX, CY, R, start, end);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+
+    const g = ctx.createRadialGradient(CX, CY, R * 0.15, CX, CY, R);
+    g.addColorStop(0, 'rgba(255,255,255,0.15)');
+    g.addColorStop(0.5, 'rgba(255,255,255,0.04)');
+    g.addColorStop(1, 'rgba(0,0,0,0.22)');
+    ctx.fillStyle = g;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + R * Math.cos(start), CY + R * Math.sin(start));
+    ctx.strokeStyle = 'rgba(6,8,16,0.7)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    const midAngle = start + sweep / 2;
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(midAngle);
+
+    ctx.font = `${seg.deg > 80 ? 22 : 16}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(seg.pieces === 4 ? '🫓' : '', R * 0.62, -12);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = `bold ${seg.deg > 60 ? 15 : 12}px Sarabun, sans-serif`;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(seg.label, R * 0.58, seg.deg > 60 ? 6 : 0);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = `${seg.deg > 60 ? 11 : 9}px Orbitron, monospace`;
+    ctx.shadowBlur = 0;
+    ctx.fillText((seg.prob * 100) + '%', R * 0.58, seg.deg > 60 ? 22 : 14);
+
+    ctx.restore();
+    start = end;
+  });
+
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(14,16,32,0.9)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+drawWheel(currentAngle);
+setTimeout(() => { document.getElementById('result-badge').style.opacity = '0.3'; }, 600);
+
+function pickResult(finalAngle) {
+  const ptr = (((-Math.PI / 2) - finalAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const deg = ptr * 180 / Math.PI;
+  for (let i = SEGMENTS.length - 1; i >= 0; i--) {
+    if (deg >= SEGMENTS[i].startDeg) return i;
+  }
+  return 0;
+}
+
+function spinWheel() {
+  if (isSpinning) return;
+  isSpinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('wheel-wrap').classList.add('spinning');
+
+  const rand = Math.random();
+  let cum = 0, targetSeg = 0;
+  for (let i = 0; i < SEGMENTS.length; i++) {
+    cum += SEGMENTS[i].prob;
+    if (rand < cum) { targetSeg = i; break; }
+  }
+
+  const seg = SEGMENTS[targetSeg];
+  const targetDegCenter = seg.startDeg + seg.deg / 2;
+  const targetRad = (-Math.PI / 2) - (targetDegCenter * Math.PI / 180);
+  const fullRotations = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
+  const finalAngle = targetRad - currentAngle % (2 * Math.PI) + fullRotations;
+
+  const duration = 4000 + Math.random() * 1000;
+  const startAngle = currentAngle;
+  const startTime = performance.now();
+
+  spinCount++;
+  addTermLog('$', `spin(${spinCount}) // target: ${seg.label}`);
+  addTermLog('', `→ prob: ${(seg.prob * 100)}% | Δ: ${Math.round(finalAngle * 180 / Math.PI)}°`, 't-dim');
+  setStatus(false, 'Spinning...');
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4.5); }
+
+  function animate(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    currentAngle = startAngle + finalAngle * easeOut(t);
+    drawWheel(currentAngle);
+    if (t < 1) { requestAnimationFrame(animate); }
+    else {
+      isSpinning = false;
+      document.getElementById('spin-btn').disabled = false;
+      document.getElementById('wheel-wrap').classList.remove('spinning');
+      onSpinEnd(targetSeg);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function onSpinEnd(idx) {
+  const seg = SEGMENTS[idx];
+  const badge = document.getElementById('result-badge');
+  badge.textContent = seg.emoji + ' ได้ ' + seg.label + '!';
+  badge.className = 'result-badge show win';
+  addTermLog('', `✓ Result: ${seg.label} (${(seg.prob*100)}%)`, 't-ok');
+  setStatus(true, `ได้ ${seg.label} — congratulations!`);
+  totalPieces += seg.pieces;
+  addHistory(seg);
+  updateStats(seg);
+  launchConfetti(seg.color);
+  triggerBeat();
+}
+
+function addHistory(seg) {
+  const now = new Date();
+  const t = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  history.unshift({ seg, t, n: spinCount });
+  if (history.length > 10) history.pop();
+
+  const list = document.getElementById('history-list');
+  const em = document.getElementById('h-empty');
+  if (em) em.remove();
+  list.innerHTML = '';
+
+  history.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'h-item';
+    el.innerHTML = `
+      <div class="h-dot" style="background:${item.seg.color};box-shadow:0 0 5px ${item.seg.color}88"></div>
+      <div style="flex:1;min-width:0">
+        <div class="h-label">${item.seg.emoji} ${item.seg.label}</div>
+        <div class="h-sub">${item.t}</div>
+      </div>
+      <div class="h-num">#${item.n}</div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+function updateStats(seg) {
+  document.getElementById('stat-total').textContent = spinCount;
+  const best = Math.max(...history.map(h => h.seg.pieces));
+  document.getElementById('stat-best').textContent = best + 'pc';
+  const avg = (totalPieces / spinCount).toFixed(1);
+  document.getElementById('stat-avg').textContent = avg;
+  const lucky4 = history.filter(h => h.seg.pieces === 4).length;
+  document.getElementById('stat-lucky').textContent = lucky4 + 'x';
+}
+
+function addTermLog(prompt, text, cls = 't-info') {
+  const body = document.getElementById('terminal-body');
+  const line = document.createElement('div');
+  line.className = 'term-line';
+  line.innerHTML = `<span class="term-prompt" style="opacity:${prompt?'0.7':'0'}">${prompt||'&nbsp;'}</span><span class="${cls}" style="font-size:0.58rem">${text}</span>`;
+  const cur = body.querySelector('.cursor');
+  if (cur) body.insertBefore(line, cur.closest('.term-line'));
+  else body.appendChild(line);
+  const lines = body.querySelectorAll('.term-line');
+  if (lines.length > 20) lines[0].remove();
+  body.scrollTop = body.scrollHeight;
+}
+
+function setStatus(ok, msg) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  if (ok === null) {
+    dot.className = 'status-dot'; txt.className = 'status-text ok'; txt.textContent = msg;
+  } else if (ok) {
+    dot.className = 'status-dot'; txt.className = 'status-text ok'; txt.textContent = '✓ ' + msg;
+  } else {
+    dot.className = 'status-dot'; txt.className = 'status-text'; txt.textContent = '⟳ ' + msg;
+  }
+}
+
+const cc = document.getElementById('confetti-canvas');
+const cx2 = cc.getContext('2d');
+cc.width = window.innerWidth; cc.height = window.innerHeight;
+window.addEventListener('resize', () => { cc.width = window.innerWidth; cc.height = window.innerHeight; });
+let particles = [];
+
+function launchConfetti(base) {
+  const cols = [base, '#fcd34d', '#fff', '#60a5fa', base + 'bb'];
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: window.innerWidth / 2 + (Math.random() - 0.5) * 80,
+      y: window.innerHeight * 0.45,
+      vx: (Math.random() - 0.5) * 11,
+      vy: -(Math.random() * 13 + 4),
+      s: Math.random() * 7 + 3,
+      c: cols[Math.floor(Math.random() * cols.length)],
+      r: Math.random() * 360, rv: (Math.random() - 0.5) * 9,
+      life: 1, dec: Math.random() * 0.012 + 0.007,
+      sq: Math.random() > 0.5
+    });
+  }
+  animConf();
+}
+
+function animConf() {
+  cx2.clearRect(0, 0, cc.width, cc.height);
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.35; p.vx *= 0.99;
+    p.r += p.rv; p.life -= p.dec;
+    cx2.save(); cx2.globalAlpha = p.life;
+    cx2.translate(p.x, p.y); cx2.rotate(p.r * Math.PI / 180);
+    cx2.fillStyle = p.c;
+    if (p.sq) cx2.fillRect(-p.s/2, -p.s/4, p.s, p.s/2);
+    else { cx2.beginPath(); cx2.arc(0,0,p.s/2,0,2*Math.PI); cx2.fill(); }
+    cx2.restore();
+  });
+  if (particles.length > 0) requestAnimationFrame(animConf);
+}
+
+let audioCtx = null, isPlaying = false, musicTimer = null;
+const tracks = ['SKRC Beat #01', 'Robo Groove', 'Roti Bounce', 'Circuit Jam'];
+let trackIdx = 0;
+
+function getAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function tone(f, type, g, dur, d = 0) {
+  try {
+    const ac = getAC(), o = ac.createOscillator(), gain = ac.createGain();
+    o.connect(gain); gain.connect(ac.destination);
+    o.type = type; o.frequency.value = f;
+    gain.gain.setValueAtTime(g, ac.currentTime + d);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + d + dur);
+    o.start(ac.currentTime + d); o.stop(ac.currentTime + d + dur + 0.05);
+  } catch(e) {}
+}
+
+function beat() {
+  tone(55, 'sine', 0.2, 0.18);
+  tone(110, 'square', 0.025, 0.06, 0.5);
+  tone(55, 'sine', 0.14, 0.14, 1.0);
+  tone(82, 'sine', 0.08, 0.1, 1.5);
+  tone(110, 'square', 0.025, 0.06, 2.0);
+  tone(55, 'sine', 0.18, 0.16, 2.5);
+  tone(110, 'square', 0.03, 0.06, 3.0);
+  tone(69, 'sine', 0.1, 0.12, 3.5);
+}
+
+function triggerBeat() {
+  tone(523, 'sine', 0.15, 0.18);
+  tone(659, 'sine', 0.12, 0.18, 0.13);
+  tone(784, 'sine', 0.2, 0.3, 0.26);
+}
+
+function toggleMusic() {
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('play-btn');
+  const st = document.getElementById('m-state');
+  if (isPlaying) {
+    btn.textContent = '⏸'; st.textContent = 'playing';
+    beat(); musicTimer = setInterval(beat, 4000); animWave(true);
+  } else {
+    btn.textContent = '▶'; st.textContent = 'paused';
+    clearInterval(musicTimer); animWave(false);
+  }
+}
+function prevTrack() { trackIdx = (trackIdx - 1 + tracks.length) % tracks.length; document.getElementById('music-track').textContent = tracks[trackIdx]; }
+function nextTrack() { trackIdx = (trackIdx + 1) % tracks.length; document.getElementById('music-track').textContent = tracks[trackIdx]; }
+
+const wf = document.getElementById('waveform');
+for (let i = 0; i < 18; i++) {
+  const b = document.createElement('div'); b.className = 'w-bar';
+  b.style.height = '3px'; wf.appendChild(b);
+}
+
+function animWave(on) {
+  const bars = wf.querySelectorAll('.w-bar');
+  if (!on) { bars.forEach(b => { b.style.height = '3px'; b.classList.remove('active'); }); return; }
+  bars.forEach(b => b.classList.add('active'));
+  (function step() {
+    if (!isPlaying) { animWave(false); return; }
+    bars.forEach(b => b.style.height = (Math.random() * 13 + 3) + 'px');
+    setTimeout(step, 80);
+  })();
+}
+
+document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); spinWheel(); } });
+</script>
+</body>
+</html>
