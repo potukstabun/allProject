@@ -110,22 +110,52 @@
     position: relative; z-index: 10;
     flex: 1;
     display: grid;
-    grid-template-columns: 220px 1fr 220px;
+    grid-template-columns: 400px 1fr 260px;
     gap: 12px;
     padding: 12px 16px;
     min-height: 0;
   }
 
+  .left-panel {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+  .panel-full { grid-column: span 2; }
+
   .panel {
-    background: rgba(14,16,32,0.7);
-    border: 1px solid var(--border);
+    background: rgba(22, 24, 40, 0.5);
+    border: 1px solid rgba(100, 180, 255, 0.1);
     border-radius: 14px;
     padding: 12px;
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     gap: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
   }
+  .panel:hover { transform: translateY(-2px); box-shadow: 0 8px 32px -1px rgba(0, 0, 0, 0.3); border-color: rgba(34, 211, 238, 0.2); }
+  
+  /* Neon Border สำหรับบล็อกที่ใช้งาน */
+  .panel.active {
+    transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  #bg-glow {
+    position: fixed; inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 1s ease, background 1s ease;
+    opacity: 0;
+  }
+
+  @keyframes bounce-num {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .animate-bounce { animation: bounce-num 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
   .panel-label {
     font-family: 'Orbitron', monospace;
@@ -314,17 +344,24 @@
   .seg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .seg-name { font-size: 0.6rem; color: var(--text-dim); flex: 1; }
   .seg-num-input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 2px 5px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.62rem;
+    font-size: 0.85rem;
     color: var(--gold);
-    width: 38px; text-align: right; outline: none;
-    transition: border-color 0.2s;
+    width: 75px; 
+    padding: 6px 12px;
+    text-align: right; outline: none;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.1);
   }
-  .seg-num-input:focus { border-color: rgba(245,158,11,0.4); }
+  .seg-num-input:focus { 
+    border-color: rgba(245, 158, 11, 0.5); 
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.1), inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
   .seg-pct { font-size: 0.6rem; color: var(--text-dim); }
 
   .settings-footer {
@@ -447,6 +484,7 @@
 <body>
 
 <div class="scanline"></div>
+<div id="bg-glow"></div>
 <canvas id="confetti-canvas"></canvas>
 
 <header>
@@ -498,7 +536,7 @@
   </div>
 
   <div class="header-center">
-    <div class="roti-title">🫓 โรตีสายไหม</div>
+    <div class="roti-title">โรตีสายไหม</div>
     <div class="roti-sub">Fortune Spin Wheel</div>
   </div>
 
@@ -525,9 +563,9 @@
 <div class="app">
 
   <!-- LEFT -->
-  <div class="left-panel" style="display:flex;flex-direction:column;gap:10px;">
+  <div class="left-panel">
 
-    <div class="panel" style="flex:1">
+    <div class="panel panel-full" id="panel-terminal">
       <div class="panel-label">Terminal Log</div>
       <div class="terminal">
         <div class="terminal-bar">
@@ -544,7 +582,7 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="panel-status">
       <div class="panel-label">System Status</div>
       <div class="status-box">
         <div class="status-dot" id="status-dot"></div>
@@ -552,34 +590,20 @@
       </div>
     </div>
 
-    <div class="panel">
+    <div class="panel panel-full" id="panel-music">
       <div class="panel-label">Music</div>
-      <div class="music-box">
-        <div class="music-top">
-          <div>
-            <div class="music-track" id="music-track">SKRC Beat #01</div>
-            <div class="music-genre">Lo-fi / Ambient</div>
-          </div>
-        </div>
-        <div class="waveform" id="waveform"></div>
-        <div class="music-controls">
-          <button class="m-btn" onclick="prevTrack()">◁</button>
-          <button class="m-btn play" id="play-btn" onclick="toggleMusic()">▶</button>
-          <button class="m-btn" onclick="nextTrack()">▷</button>
-          <span class="m-state" id="m-state">paused</span>
-        </div>
-      </div>
+      <iframe id="spotify-player" style="border-radius:12px" src="https://open.spotify.com/embed/playlist/5cecbnbFRzuNeYVjuy0c3x?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     </div>
 
     <!-- SETTINGS -->
-    <div class="panel">
+    <div class="panel panel-full" id="panel-settings">
       <div class="panel-label">Settings</div>
       <div class="settings-box">
 
         <!-- LOCKED state -->
         <div class="lock-screen" id="lock-screen">
           <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--text-dim);text-align:center;">
-            🔐 ใส่รหัสเพื่อแก้เรท
+            🔐 ใส่รหัสเพื่อแก้ไข
           </div>
           <div class="pw-row">
             <span style="font-size:0.6rem;color:var(--text-dim)">🔑</span>
@@ -634,7 +658,7 @@
   </div>
 
   <!-- CENTER -->
-  <div class="center-panel">
+  <div class="center-panel" id="panel-wheel">
     <div class="wheel-wrap" id="wheel-wrap">
       <div class="wheel-glow" id="wheel-glow"></div>
       <div class="wheel-border"></div>
@@ -686,6 +710,19 @@
 </div>
 
 <script>
+// ——— HELPER ———
+function setPanelActive(id, active, color = null) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (active) {
+    el.classList.add('active');
+    if (color) {
+      el.style.borderColor = color;
+      el.style.boxShadow = `0 0 20px ${color}66, inset 0 0 10px ${color}22`;
+    }
+  } else { el.classList.remove('active'); el.style.borderColor = ''; el.style.boxShadow = ''; }
+}
+
 // ——— PASSWORD ———
 const CORRECT_PASSWORD = 'aouchai14';
 
@@ -766,6 +803,15 @@ function applyRates() {
   addTermLog('$', `setRates(${vals.map(v=>Math.round(v*100)).join(',')})`, 't-warn');
   addTermLog('', '✓ Rates updated & applied', 't-ok');
   setStatus(true, 'Rates updated!');
+
+  // Number animation
+  document.querySelectorAll('.seg-num-input').forEach((el, idx) => {
+    setTimeout(() => {
+      el.classList.add('animate-bounce');
+      el.addEventListener('animationend', () => el.classList.remove('animate-bounce'), {once: true});
+    }, idx * 60);
+  });
+
   setTimeout(() => setStatus(null, 'ONLINE — ระบบพร้อม'), 2000);
 }
 
@@ -854,6 +900,19 @@ function drawWheel(angle) {
     start = end;
   });
 
+  // Reflective Shine Overlay (เพิ่มแสงสะท้อนหน้าปัดกระจก)
+  ctx.save();
+  const shine = ctx.createLinearGradient(W * 0.2, 0, W * 0.8, W);
+  shine.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
+  shine.addColorStop(0.48, 'rgba(255, 255, 255, 0)');
+  shine.addColorStop(0.52, 'rgba(255, 255, 255, 0)');
+  shine.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+  ctx.fillStyle = shine;
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.restore();
+
   ctx.beginPath();
   ctx.arc(CX, CY, R, 0, 2 * Math.PI);
   ctx.strokeStyle = 'rgba(14,16,32,0.9)';
@@ -887,6 +946,9 @@ function spinWheel() {
   }
 
   const seg = SEGMENTS[targetSeg];
+  setPanelActive('panel-wheel', true, seg.color);
+  setPanelActive('hub', true, seg.color);
+
   const targetDegCenter = seg.startDeg + seg.deg / 2;
   const targetRad = (-Math.PI / 2) - (targetDegCenter * Math.PI / 180);
   const fullRotations = (Math.floor(Math.random() * 5) + 5) * 2 * Math.PI;
@@ -923,6 +985,8 @@ function onSpinEnd(idx) {
   const badge = document.getElementById('result-badge');
   badge.textContent = seg.emoji + ' ได้ ' + seg.label + '!';
   badge.className = 'result-badge show win';
+  setPanelActive('panel-wheel', false);
+  setPanelActive('hub', false);
   addTermLog('', `✓ Result: ${seg.label} (${(seg.prob*100)}%)`, 't-ok');
   setStatus(true, `ได้ ${seg.label} — congratulations!`);
   totalPieces += seg.pieces;
@@ -930,6 +994,7 @@ function onSpinEnd(idx) {
   updateStats(seg);
   launchConfetti(seg.color);
   triggerBeat();
+  speakResult(seg);
 }
 
 function addHistory(seg) {
@@ -1070,15 +1135,17 @@ function triggerBeat() {
   tone(784, 'sine', 0.2, 0.3, 0.26);
 }
 
+let wasPlayingBeforeSpeech = false;
+
 function toggleMusic() {
   isPlaying = !isPlaying;
   const btn = document.getElementById('play-btn');
   const st = document.getElementById('m-state');
   if (isPlaying) {
-    btn.textContent = '⏸'; st.textContent = 'playing';
+    if (btn) btn.textContent = '⏸'; if (st) st.textContent = 'playing';
     beat(); musicTimer = setInterval(beat, 4000); animWave(true);
   } else {
-    btn.textContent = '▶'; st.textContent = 'paused';
+    if (btn) btn.textContent = '▶'; if (st) st.textContent = 'paused';
     clearInterval(musicTimer); animWave(false);
   }
 }
@@ -1100,6 +1167,49 @@ function animWave(on) {
     bars.forEach(b => b.style.height = (Math.random() * 13 + 3) + 'px');
     setTimeout(step, 80);
   })();
+}
+
+function speakResult(seg) {
+  if (!window.speechSynthesis) return;
+
+  // เทคนิคหยุด Spotify: รีโหลด Iframe เพื่อให้เพลงเงียบ
+  const spotify = document.getElementById('spotify-player');
+  let originalSrc = "";
+  if (spotify) {
+    originalSrc = spotify.src;
+    spotify.src = ""; // หยุดเพลงทันที
+  }
+
+  setPanelActive('panel-settings', true, seg.color);
+
+  // เพิ่มเอฟเฟกต์ Background Glow ทั่วทั้งหน้าเว็บตามสีรางวัล
+  const bgGlow = document.getElementById('bg-glow');
+  if (bgGlow) {
+    bgGlow.style.background = `radial-gradient(circle at 50% 50%, ${seg.color}33 0%, transparent 75%)`;
+    bgGlow.style.opacity = '1';
+  }
+
+  // ปรับเป็น "ครับ" และ "เป็น" พร้อมตัดช่องว่างเพื่อความต่อเนื่อง
+  const cleanLabel = seg.label.replace(/\s/g, '');
+  const msg = new SpeechSynthesisUtterance(`ยินดีด้วยครับเป็น${cleanLabel}ครับ`);
+  msg.lang = 'th-TH';
+  msg.pitch = 1.4; // ปรับ Pitch ให้สูงขึ้นอีกเพื่อให้เสียงดูสาวและสดใส
+  msg.rate = 1.1;  // ปรับให้พูดเร็วขึ้นเล็กน้อยให้ดูมีความมั่นใจแบบวัยรุ่น
+
+  const voices = window.speechSynthesis.getVoices();
+  const femaleVoice = voices.find(v => v.lang === 'th-TH' && (v.name.includes('Kanya') || v.name.includes('Thai') || v.name.includes('Google')));
+  if (femaleVoice) msg.voice = femaleVoice;
+
+  // เมื่อพูดจบ ให้กลับไปเล่นเพลงต่อถ้าก่อนหน้านี้เพลงเคยเปิดอยู่
+  msg.onend = () => {
+    setPanelActive('panel-settings', false);
+    if (bgGlow) bgGlow.style.opacity = '0';
+    if (spotify && originalSrc) {
+      spotify.src = originalSrc; // โหลดเพลงกลับมาใหม่
+    }
+  };
+
+  window.speechSynthesis.speak(msg);
 }
 
 document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); spinWheel(); } });
